@@ -1,29 +1,33 @@
 import * as cdk from "aws-cdk-lib";
-import { Construct } from "constructs";
-import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
-import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
-import * as lambda from "aws-cdk-lib/aws-lambda";
+import { CfnOutput } from "aws-cdk-lib";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import { Cors, EndpointType } from "aws-cdk-lib/aws-apigateway";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import { Construct } from "constructs";
 
-export class AwsCdkCloudfrontExampleStack extends cdk.Stack {
+export default class ApiGatewayStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const apiGateway = new apigateway.RestApi(this, "ApiWithWAFEnabled", {
-      restApiName: "ApiWithWAFEnabled",
-      endpointTypes: [EndpointType.EDGE],
-    });
+    const apiGateway = new apigateway.RestApi(
+      this,
+      "ApiGatewayForCFDistribution",
+      {
+        restApiName: "ApiGatewayForCFDistribution",
+        endpointTypes: [EndpointType.EDGE],
+        deployOptions: { stageName: "dev" },
+      }
+    );
 
-    const rootLambda = new lambda.Function(this, "ApiGETLambda", {
-      functionName: "ApiGETLambda",
+    const rootLambda = new lambda.Function(this, "RootGETLambda", {
+      functionName: "RootGETLambda",
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: "root.handler",
       code: lambda.Code.fromAsset(`lib/lambda`),
     });
 
-    const testLambda = new lambda.Function(this, "ApiGETLambda", {
-      functionName: "ApiGETLambda",
+    const testLambda = new lambda.Function(this, "TestGETLambda", {
+      functionName: "TestGETLambda",
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: "test.handler",
       code: lambda.Code.fromAsset(`lib/lambda`),
@@ -47,9 +51,14 @@ export class AwsCdkCloudfrontExampleStack extends cdk.Stack {
       })
       .addMethod("POST", new apigateway.LambdaIntegration(testLambda));
 
-    const apiOrigin = new origins.HttpOrigin(apiGateway.url);
-    const cfDistribution = new cloudfront.Distribution(this, "CfDistribution", {
-      defaultBehavior: { origin: apiOrigin },
+    new CfnOutput(this, "ApiGatewayBaseURL", {
+      exportName: "baseUrl",
+      value: apiGateway.url,
+    });
+
+    new CfnOutput(this, "ApiGatewayHTTPMethods", {
+      exportName: "methods",
+      value: apiGateway.methods.join(","),
     });
   }
 }

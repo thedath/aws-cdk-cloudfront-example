@@ -10,6 +10,9 @@ export const handler = async (
     statusCode: 200,
     body: JSON.stringify({
       message: "hello world",
+      timestamp: new Date().toISOString(),
+      event,
+      context,
     }),
   };
 };
