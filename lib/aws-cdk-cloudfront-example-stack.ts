@@ -4,7 +4,7 @@ import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
-import { Cors } from "aws-cdk-lib/aws-apigateway";
+import { Cors, EndpointType } from "aws-cdk-lib/aws-apigateway";
 
 export class AwsCdkCloudfrontExampleStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -12,6 +12,7 @@ export class AwsCdkCloudfrontExampleStack extends cdk.Stack {
 
     const apiGateway = new apigateway.RestApi(this, "ApiWithWAFEnabled", {
       restApiName: "ApiWithWAFEnabled",
+      endpointTypes: [EndpointType.EDGE],
     });
 
     const rootLambda = new lambda.Function(this, "ApiGETLambda", {
