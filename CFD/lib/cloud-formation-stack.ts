@@ -81,5 +81,10 @@ export default class CloudFormationStack extends cdk.Stack {
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
       },
     });
+
+    new cdk.CfnOutput(this, "cloudFormationDistributionDomainName", {
+      value: cfDistribution.distributionDomainName,
+      exportName: "cloudFormationDistributionDomainName",
+    });
   }
 }
