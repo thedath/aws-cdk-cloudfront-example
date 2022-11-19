@@ -11,16 +11,19 @@ export default class CloudFormationStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CloudFormationStackProps) {
     super(scope, id, props);
 
-    // const originGroups = new origins.OriginGroup({});
-
     const apiOrigin = new origins.HttpOrigin(props.originHTTPUrl);
+
+    // const originGroups = new origins.OriginGroup({
+    //   primaryOrigin: apiOrigin,
+    //   fallbackOrigin: apiOrigin,
+    // });
 
     const cachePolicy = new cloudfront.CachePolicy(this, "CachePolicy", {
       cachePolicyName: "ExampleCachePolicy",
       comment: "Cache policy for testing purposes",
-      minTtl: cdk.Duration.seconds(1),
+      minTtl: cdk.Duration.seconds(10),
       maxTtl: cdk.Duration.seconds(1 * 60 * 60 * 24 * 365),
-      defaultTtl: cdk.Duration.seconds(10),
+      defaultTtl: cdk.Duration.seconds(30),
       enableAcceptEncodingBrotli: true,
       enableAcceptEncodingGzip: true,
       headerBehavior: cloudfront.CacheHeaderBehavior.allowList(
@@ -78,15 +81,20 @@ export default class CloudFormationStack extends cdk.Stack {
       }
     );
 
+    const defaultBehavior: cloudfront.BehaviorOptions = {
+      origin: apiOrigin,
+      allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+      cachePolicy,
+      originRequestPolicy,
+      responseHeadersPolicy,
+      cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+    };
+
     const cfDistribution = new cloudfront.Distribution(this, "CfDistribution", {
       priceClass: cloudfront.PriceClass.PRICE_CLASS_ALL,
-      defaultBehavior: {
-        origin: apiOrigin,
-        allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-        cachePolicy,
-        originRequestPolicy,
-        responseHeadersPolicy,
-        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+      defaultBehavior: { origin: apiOrigin },
+      additionalBehaviors: {
+        "/dev/*": { ...defaultBehavior },
       },
     });
 
