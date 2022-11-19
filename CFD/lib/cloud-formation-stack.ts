@@ -50,8 +50,8 @@ export default class CloudFormationStack extends cdk.Stack {
       this,
       "ResponseHeadersPolicy",
       {
-        responseHeadersPolicyName: "",
-        comment: "",
+        responseHeadersPolicyName: "ResponseHeaderPolicy",
+        comment: "ExampleResponseHeaderPolicy",
         corsBehavior: {
           accessControlAllowCredentials: false,
           accessControlAllowOrigins: ["*"],
@@ -72,6 +72,7 @@ export default class CloudFormationStack extends cdk.Stack {
     );
 
     const cfDistribution = new cloudfront.Distribution(this, "CfDistribution", {
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_ALL,
       defaultBehavior: {
         origin: apiOrigin,
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
