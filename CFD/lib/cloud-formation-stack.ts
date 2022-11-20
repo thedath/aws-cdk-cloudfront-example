@@ -4,19 +4,22 @@ import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 
 export interface CloudFormationStackProps extends cdk.StackProps {
-  originHTTPUrl: string;
+  primaryOriginHTTPUrl: string;
+  fallbackOriginHTTPUrl: string;
 }
 
 export default class CloudFormationStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CloudFormationStackProps) {
     super(scope, id, props);
 
-    const apiOrigin = new origins.HttpOrigin(props.originHTTPUrl);
+    const primaryOrigin = new origins.HttpOrigin(props.primaryOriginHTTPUrl);
+    const fallbackOrigin = new origins.HttpOrigin(props.fallbackOriginHTTPUrl);
 
-    // const originGroups = new origins.OriginGroup({
-    //   primaryOrigin: apiOrigin,
-    //   fallbackOrigin: apiOrigin,
-    // });
+    const originGroups = new origins.OriginGroup({
+      primaryOrigin,
+      fallbackOrigin,
+      fallbackStatusCodes: [500, 502, 503, 504],
+    });
 
     const cachePolicy = new cloudfront.CachePolicy(this, "CachePolicy", {
       cachePolicyName: "ExampleCachePolicy",
@@ -95,8 +98,28 @@ export default class CloudFormationStack extends cdk.Stack {
       }
     );
 
+    this.initDistribution(
+      "Primary",
+      primaryOrigin,
+      cachePolicy,
+      responseHeadersPolicy
+    );
+    this.initDistribution(
+      "Fallout",
+      fallbackOrigin,
+      cachePolicy,
+      responseHeadersPolicy
+    );
+  }
+
+  private initDistribution(
+    idPrefix: string,
+    origin: cloudfront.IOrigin,
+    cachePolicy: cloudfront.ICachePolicy,
+    responseHeadersPolicy: cloudfront.IResponseHeadersPolicy
+  ) {
     const behavior: cloudfront.BehaviorOptions = {
-      origin: apiOrigin,
+      origin: origin,
       compress: true,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.ALLOW_ALL,
       allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
@@ -107,17 +130,23 @@ export default class CloudFormationStack extends cdk.Stack {
       smoothStreaming: false,
     };
 
-    const cfDistribution = new cloudfront.Distribution(this, "CfDistribution", {
-      priceClass: cloudfront.PriceClass.PRICE_CLASS_ALL,
-      defaultBehavior: behavior,
-      additionalBehaviors: {
-        "/dev/*": behavior,
-      },
-    });
+    const cfDistribution = new cloudfront.Distribution(
+      this,
+      idPrefix + "CfDistribution",
+      {
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_ALL,
+        defaultBehavior: behavior,
+        additionalBehaviors: {
+          "/dev/*": behavior,
+        },
+      }
+    );
 
-    new cdk.CfnOutput(this, "cloudFormationDistributionDomainName", {
+    cfDistribution.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+
+    new cdk.CfnOutput(this, idPrefix + "cloudFormationDistributionDomainName", {
       value: cfDistribution.distributionDomainName,
-      exportName: "cloudFormationDistributionDomainName",
+      exportName: idPrefix + "cloudFormationDistributionDomainName",
     });
   }
 }
