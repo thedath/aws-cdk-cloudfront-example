@@ -46,7 +46,7 @@ export default class ApiGatewayStack extends cdk.Stack {
       .addResource("test", {
         defaultCorsPreflightOptions: {
           allowOrigins: Cors.ALL_ORIGINS,
-          allowMethods: ["GET"],
+          allowMethods: ["POST"],
         },
       })
       .addMethod("POST", new apigateway.LambdaIntegration(testLambda));
