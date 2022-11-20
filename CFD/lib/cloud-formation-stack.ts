@@ -43,7 +43,18 @@ export default class CloudFormationStack extends cdk.Stack {
       {
         originRequestPolicyName: "ExampleOriginRequestPolicy",
         comment: "Origin request policy for testing purposes",
-        headerBehavior: cloudfront.OriginRequestHeaderBehavior.all(),
+        headerBehavior: cloudfront.OriginRequestHeaderBehavior.all(
+          "CloudFront-Viewer-City",
+          "CloudFront-Viewer-Country-Name",
+          "CloudFront-Viewer-Country-Region",
+          "CloudFront-Viewer-Time-Zone",
+          "CloudFront-Is-Android-Viewer",
+          "CloudFront-Is-Desktop-Viewer",
+          "CloudFront-Is-IOS-Viewer",
+          "CloudFront-Is-Mobile-Viewer",
+          "CloudFront-Is-SmartTV-Viewer",
+          "CloudFront-Is-Tablet-Viewer"
+        ),
         queryStringBehavior: cloudfront.OriginRequestQueryStringBehavior.all(),
         cookieBehavior: cloudfront.OriginRequestQueryStringBehavior.none(),
       }
@@ -69,9 +80,12 @@ export default class CloudFormationStack extends cdk.Stack {
             "OPTIONS",
           ],
           accessControlMaxAge: cdk.Duration.seconds(600),
-          originOverride: true,
+          originOverride: false,
         },
-        securityHeadersBehavior: {},
+        securityHeadersBehavior: {
+          xssProtection: { protection: true, override: true, modeBlock: true },
+          contentTypeOptions: { override: true },
+        },
         customHeadersBehavior: {
           customHeaders: [
             { header: "Custom-H1", override: true, value: "Custom Value 1" },
@@ -81,20 +95,23 @@ export default class CloudFormationStack extends cdk.Stack {
       }
     );
 
-    const defaultBehavior: cloudfront.BehaviorOptions = {
+    const behavior: cloudfront.BehaviorOptions = {
       origin: apiOrigin,
+      compress: true,
+      viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.ALLOW_ALL,
       allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-      cachePolicy,
-      originRequestPolicy,
-      responseHeadersPolicy,
       cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+      cachePolicy,
+      // originRequestPolicy,
+      responseHeadersPolicy,
+      smoothStreaming: false,
     };
 
     const cfDistribution = new cloudfront.Distribution(this, "CfDistribution", {
       priceClass: cloudfront.PriceClass.PRICE_CLASS_ALL,
-      defaultBehavior: { origin: apiOrigin },
+      defaultBehavior: behavior,
       additionalBehaviors: {
-        "/dev/*": { ...defaultBehavior },
+        "/dev/*": behavior,
       },
     });
 
