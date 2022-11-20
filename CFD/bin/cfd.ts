@@ -5,7 +5,7 @@ import CloudFormationStack from "../lib/cloud-formation-stack";
 
 const app = new cdk.App();
 new CloudFormationStack(app, "CloudFormationStack", {
-  originHTTPUrl: "9ps597mo75.execute-api.us-west-2.amazonaws.com",
+  originHTTPUrl: "ucs5jtynkl.execute-api.us-west-2.amazonaws.com",
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
