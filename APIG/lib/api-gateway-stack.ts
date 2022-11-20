@@ -33,23 +33,20 @@ export default class ApiGatewayStack extends cdk.Stack {
       code: lambda.Code.fromAsset(`lib/lambda`),
     });
 
-    apiGateway.root.addCorsPreflight({
-      allowOrigins: Cors.ALL_ORIGINS,
-      allowMethods: ["GET"],
-    });
+    // apiGateway.root.addCorsPreflight({
+    //   allowOrigins: Cors.ALL_ORIGINS,
+    //   allowMethods: ["GET"],
+    // });
     apiGateway.root.addMethod(
       "GET",
       new apigateway.LambdaIntegration(rootLambda)
     );
 
+    apiGateway.root.addResource("test");
+
     apiGateway.root
-      .addResource("test", {
-        defaultCorsPreflightOptions: {
-          allowOrigins: Cors.ALL_ORIGINS,
-          allowMethods: ["POST"],
-        },
-      })
-      .addMethod("POST", new apigateway.LambdaIntegration(testLambda));
+      .getResource("test")
+      ?.addMethod("POST", new apigateway.LambdaIntegration(testLambda));
 
     new CfnOutput(this, "ApiGatewayBaseURL", {
       exportName: "baseUrl",
